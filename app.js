@@ -45,14 +45,15 @@ const requestListener = async (req, res) => {
     } else if (category === 'post') {
         switch (method) {
             case 'POST': {
-                const postData = await bodyparser(req).catch((error) => errorHandler(res, error.message));
-                if (!postData.content) {
-                    errorHandler(res, '未填寫內容')
-                } else {
+                try {
+                    const postData = await bodyparser(req);
+                    if (!postData.content) throw "未填寫內容"
                     Post.create(postData)
                         .then(() => Post.find())
                         .then((data) => successHandler(res, data))
                         .catch((error) => errorHandler(res, error.message))
+                } catch (error) {
+                    errorHandler(res, error.message);
                 }
                 break;
             }
@@ -66,14 +67,16 @@ const requestListener = async (req, res) => {
             }
             case 'PATCH': {
                 if (id === null) errorHandler(res, '查無ID');
-                const postData = await bodyparser(req).catch((error) => errorHandler(res, error.message));
-                if (!postData.content) {
-                    errorHandler(res, '未填寫內容');
-                } else {
+                try {
+                    const postData = await bodyparser(req);
+                    if (!postData.content) throw "未填寫內容"
                     Post.findByIdAndUpdate(id, postData, { runValidators: true })
                         .then(() => Post.find())
                         .then((data) => successHandler(res, data))
                         .catch((error) => errorHandler(res, error.message))
+                }
+                catch (error) {
+                    errorHandler(res, error.message)
                 }
                 break;
             }
