@@ -8,7 +8,7 @@ const Post = require('./models/post');
 const { successHandler, errorHandler } = require('./responseHandler');
 const bodyparser = require('./bodyparser');
 
-dotenv.config({path: './config.env'});
+dotenv.config({ path: './config.env' });
 const DB = process.env.DB.replace('<password>', process.env.PASSWORD);
 
 mongoose.connect(DB)
@@ -45,15 +45,19 @@ const requestListener = async (req, res) => {
     } else if (category === 'post') {
         switch (method) {
             case 'POST': {
-                const newPost = await bodyparser(req)
-                Post.create(newPost)
-                    .then(() => Post.find())
-                    .then((data) => successHandler(res, data))
-                    .catch((error) => errorHandler(res, error.message))
+                const postData = await bodyparser(req).catch((error) => errorHandler(res, error.message));
+                if (!postData.content) {
+                    errorHandler(res, '未填寫內容')
+                } else {
+                    Post.create(postData)
+                        .then(() => Post.find())
+                        .then((data) => successHandler(res, data))
+                        .catch((error) => errorHandler(res, error.message))
+                }
                 break;
             }
             case 'DELETE': {
-                if(id === null) errorHandler(res, '查無ID');
+                if (id === null) errorHandler(res, '查無ID');
                 Post.findByIdAndDelete(id)
                     .then(() => Post.find())
                     .then((data) => successHandler(res, data))
@@ -61,12 +65,16 @@ const requestListener = async (req, res) => {
                 break;
             }
             case 'PATCH': {
-                if(id === null) errorHandler(res, '查無ID');
-                bodyparser(req)
-                    .then((data) => Post.findByIdAndUpdate(id, data))
-                    .then(() => Post.find())
-                    .then((data) => successHandler(res, data))
-                    .catch((error) => errorHandler(res, error.message))
+                if (id === null) errorHandler(res, '查無ID');
+                const postData = await bodyparser(req).catch((error) => errorHandler(res, error.message));
+                if (!postData.content) {
+                    errorHandler(res, '未填寫內容');
+                } else {
+                    Post.findByIdAndUpdate(id, postData, { runValidators: true })
+                        .then(() => Post.find())
+                        .then((data) => successHandler(res, data))
+                        .catch((error) => errorHandler(res, error.message))
+                }
                 break;
             }
             default:
@@ -74,7 +82,7 @@ const requestListener = async (req, res) => {
                 break;
         }
     } else {
-        errorHandler(res, '錯誤的路由')
+        errorHandler(res, '錯誤的路由', 404);
     }
 }
 

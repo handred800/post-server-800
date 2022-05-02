@@ -14,8 +14,8 @@ module.exports = {
         }))
         res.end();
     },
-    errorHandler(res, message) {
-        res.writeHead(400, headers);
+    errorHandler(res, message, statusCode = 400) {
+        res.writeHead(statusCode, headers);
         res.write(JSON.stringify({
             status: false,
             message,
